@@ -1,6 +1,60 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import * as XLSX from "xlsx";
 
+const CORRECT_PIN = "1185";
+
+function PinLock({ onUnlock }) {
+  const [pin, setPin] = useState("");
+  const [error, setError] = useState(false);
+  const [shake, setShake] = useState(false);
+
+  const handleKey = (digit) => {
+    if (pin.length >= 4) return;
+    const next = pin + digit;
+    setPin(next);
+    setError(false);
+    if (next.length === 4) {
+      setTimeout(() => {
+        if (next === CORRECT_PIN) {
+          onUnlock();
+        } else {
+          setShake(true);
+          setError(true);
+          setTimeout(() => { setPin(""); setShake(false); }, 600);
+        }
+      }, 150);
+    }
+  };
+
+  const handleDelete = () => { setPin(p => p.slice(0, -1)); setError(false); };
+
+  return (
+    <div style={{ fontFamily: "'Syne', sans-serif", background: "#0a0e1a", minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#e8e8f0" }}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&display=swap'); * { box-sizing: border-box; margin: 0; padding: 0; } .pin-btn { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); color: #e8e8f0; border-radius: 50%; width: 72px; height: 72px; font-size: 22px; font-weight: 700; cursor: pointer; transition: all 0.15s; font-family: 'Syne', sans-serif; } .pin-btn:hover { background: rgba(61,90,254,0.25); border-color: #3d5afe; } .pin-btn:active { transform: scale(0.92); } @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-8px)} 80%{transform:translateX(8px)} }`}</style>
+      <div style={{ width: 40, height: 40, borderRadius: 10, background: "linear-gradient(135deg,#3d5afe,#7c4dff)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, marginBottom: 16 }}>💰</div>
+      <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 4 }}>DivRadar <span style={{ color: "#3d5afe" }}>Pro</span></div>
+      <div style={{ fontSize: 12, color: "#556", letterSpacing: "0.1em", fontWeight: 600, marginBottom: 40 }}>INTRODUCE TU PIN</div>
+
+      <div style={{ display: "flex", gap: 16, marginBottom: 40, animation: shake ? "shake 0.5s ease" : "none" }}>
+        {[0,1,2,3].map(i => (
+          <div key={i} style={{ width: 16, height: 16, borderRadius: "50%", background: pin.length > i ? (error ? "#ff5252" : "#3d5afe") : "rgba(255,255,255,0.15)", transition: "all 0.2s", boxShadow: pin.length > i && !error ? "0 0 10px rgba(61,90,254,0.6)" : "none" }} />
+        ))}
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 72px)", gap: 14 }}>
+        {[1,2,3,4,5,6,7,8,9].map(n => (
+          <button key={n} className="pin-btn" onClick={() => handleKey(String(n))}>{n}</button>
+        ))}
+        <div />
+        <button className="pin-btn" onClick={() => handleKey("0")}>0</button>
+        <button className="pin-btn" onClick={handleDelete} style={{ fontSize: 18 }}>⌫</button>
+      </div>
+
+      {error && <div style={{ marginTop: 24, color: "#ff5252", fontSize: 13, fontWeight: 600 }}>PIN incorrecto. Inténtalo de nuevo.</div>}
+    </div>
+  );
+}
+
 const COUNTRIES = [
   { code: "ALL", name: "🌍 Todo el mundo" },
   { code: "US", name: "🇺🇸 Estados Unidos" },
@@ -66,7 +120,7 @@ function matchesFilters(stock, filters) {
 
 const ALERT_CONDITIONS = ["mayor que", "menor que"];
 
-export default function DividendScreener() {
+function DividendScreener() {
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [tempFilters, setTempFilters] = useState(DEFAULT_FILTERS);
   const [stocks, setStocks] = useState(MOCK_STOCKS);
@@ -465,4 +519,10 @@ export default function DividendScreener() {
       )}
     </div>
   );
+}
+
+export default function App() {
+  const [unlocked, setUnlocked] = useState(false);
+  if (!unlocked) return <PinLock onUnlock={() => setUnlocked(true)} />;
+  return <DividendScreener />;
 }
