@@ -1,33 +1,31 @@
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  
-  const tickers = [
-    'ABBV', 'ENB', 'REP.MC', 'SHEL', 'BASF.DE', 'T', 'BHP',
-    'VOD', 'VZ', 'NEE', 'IBE.MC', 'INGA.AS', 'AZN', 'TD',
-    'AEP', 'ENEL.MI', 'WES', 'BNS', 'HRZN', 'TTE'
-  ];
+  res.setHeader('Cache-Control', 's-maxage=300');
 
-  const symbols = tickers.join('%2C');
-  const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbols}&fields=regularMarketPrice,regularMarketChangePercent,trailingAnnualDividendYield`;
+  const tickers = 'ABBV,ENB,SHEL,T,BHP,VOD,VZ,NEE,AZN,TD,AEP,WES,BNS,HRZN,TTE,BASF.DE,REP.MC,IBE.MC,INGA.AS,ENEL.MI';
 
   try {
-    const response = await fetch(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0' }
-    });
-    const data = await response.json();
-    const quotes = data.quoteResponse?.result || [];
+    const url = `https://query2.finance.yahoo.com/v8/finance/spark?symbols=${tickers}&range=1d&interval=1d`;
+    const r = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+    const data = await r.json();
     
     const result = {};
-    quotes.forEach(q => {
-      result[q.symbol] = {
-        price: q.regularMarketPrice,
-        priceChange: q.regularMarketChangePercent,
-        yield: (q.trailingAnnualDividendYield || 0) * 100
-      };
+    const sparks = data.spark?.result || [];
+    sparks.forEach(item => {
+      if (item?.symbol && item?.response?.[0]) {
+        const meta = item.response[0].meta;
+        result[item.symbol] = {
+          price: meta?.regularMarketPrice || 0,
+          priceChange: meta?.regularMarketChangePercent || 0,
+          yield: 0
+        };
+      }
     });
     
     res.status(200).json(result);
-  } catch (e) {
-    res.status(500).json({ error: 'Error fetching data' });
+  } catch(e) {
+    res.status(200).json({});
   }
 }
+
+
