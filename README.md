@@ -1,0 +1,2 @@
+# divradar
+Global Dividend Screener
