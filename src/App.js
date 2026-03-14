@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import * as XLSX from "xlsx";
 
-const CORRECT_PIN = "1185";
+const CORRECT_PIN = "1982";
 
 function PinLock({ onUnlock }) {
   const [pin, setPin] = useState("");
